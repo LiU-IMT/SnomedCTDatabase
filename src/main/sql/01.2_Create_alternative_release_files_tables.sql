@@ -1,0 +1,1 @@
+﻿SELECT count(id) as cnt, id, term FROM descriptions_rf2 GROUP BY id, term, effectivetime ORDER BY cnt DESC

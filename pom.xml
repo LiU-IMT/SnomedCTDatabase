@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>SnomedCTDatabase</groupId>
+	<artifactId>SnomedCTDatabase</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<properties>
+		<snomedCTSourceDirectory>/tmp/Untitled Folder/</snomedCTSourceDirectory>
+	</properties>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>sql-maven-plugin</artifactId>
+				<version>1.5</version>
+
+				<dependencies>
+					<dependency>
+						<groupId>postgresql</groupId>
+						<artifactId>postgresql</artifactId>
+						<version>9.1-901.jdbc4</version>
+					</dependency>
+				</dependencies>
+
+				<!-- common configuration shared by all executions -->
+				<configuration>
+					<driver>org.postgresql.Driver</driver>
+					<url>jdbc:postgresql://127.0.0.1/termbind</url>
+					<settingsKey>termbindDatabase</settingsKey>
+					<forceMojoExecution>true</forceMojoExecution>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>create-schema</id>
+						<phase>install</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+						<configuration>
+							<autocommit>true</autocommit>
+							<srcFiles>
+								<srcFile>src/main/sql/01.0_Create_release_files_tables.sql</srcFile>
+							</srcFiles>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-content</id>
+						<phase>install</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+						<configuration>
+							<autocommit>true</autocommit>
+							<sqlCommand>
+								COPY concepts_rf2 FROM
+								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Concept_Full_INT_20130731.txt'
+								WITH
+								DELIMITER AS E'\t' CSV HEADER QUOTE AS '|';
+
+								COPY descriptions_rf2 FROM
+								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Description_Full-en_INT_20130731.txt'
+								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
+
+								COPY descriptions_rf2 FROM
+								E'${snomedCTSourceDirectory}Full/Terminology/sct2_TextDefinition_Full-en_INT_20130731.txt'
+								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
+
+								COPY relationships_rf2 FROM
+								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Relationship_Full_INT_20130731.txt'
+								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
+
+								COPY languagerefsets_rf2 FROM
+								E'${snomedCTSourceDirectory}Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_20130731.txt'
+								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
+							</sqlCommand>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
