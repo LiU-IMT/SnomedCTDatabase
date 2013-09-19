@@ -11,72 +11,41 @@
 		<plugins>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>sql-maven-plugin</artifactId>
-				<version>1.5</version>
-
-				<dependencies>
-					<dependency>
-						<groupId>postgresql</groupId>
-						<artifactId>postgresql</artifactId>
-						<version>9.1-901.jdbc4</version>
-					</dependency>
-				</dependencies>
-
-				<!-- common configuration shared by all executions -->
-				<configuration>
-					<driver>org.postgresql.Driver</driver>
-					<url>jdbc:postgresql://127.0.0.1/termbind</url>
-					<settingsKey>termbindDatabase</settingsKey>
-					<forceMojoExecution>true</forceMojoExecution>
-				</configuration>
-
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.1.1</version>
 				<executions>
 					<execution>
-						<id>create-schema</id>
-						<phase>install</phase>
+						<id>create-database</id>
+						<phase>compile</phase>
 						<goals>
-							<goal>execute</goal>
+							<goal>exec</goal>
 						</goals>
 						<configuration>
-							<autocommit>true</autocommit>
-							<srcFiles>
-								<srcFile>src/main/sql/01.0_Create_release_files_tables.sql</srcFile>
-							</srcFiles>
+							<arguments>
+								<argument>-f</argument>
+								<argument>${basedir}/src/main/sql/00.0_Create_database_and_users.sql</argument>
+							</arguments>
 						</configuration>
 					</execution>
 					<execution>
-						<id>copy-content</id>
-						<phase>install</phase>
+						<id>create-rf-tables</id>
+						<phase>compile</phase>
 						<goals>
-							<goal>execute</goal>
+							<goal>exec</goal>
 						</goals>
 						<configuration>
-							<autocommit>true</autocommit>
-							<sqlCommand>
-								COPY concepts_rf2 FROM
-								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Concept_Full_INT_20130731.txt'
-								WITH
-								DELIMITER AS E'\t' CSV HEADER QUOTE AS '|';
-
-								COPY descriptions_rf2 FROM
-								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Description_Full-en_INT_20130731.txt'
-								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
-
-								COPY descriptions_rf2 FROM
-								E'${snomedCTSourceDirectory}Full/Terminology/sct2_TextDefinition_Full-en_INT_20130731.txt'
-								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
-
-								COPY relationships_rf2 FROM
-								E'${snomedCTSourceDirectory}Full/Terminology/sct2_Relationship_Full_INT_20130731.txt'
-								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
-
-								COPY languagerefsets_rf2 FROM
-								E'${snomedCTSourceDirectory}Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_20130731.txt'
-								WITH DELIMITER AS E'\t' CSV HEADER QUOTE AS '`';
-							</sqlCommand>
+							<arguments>
+								<argument>-d</argument>
+								<argument>termbind2</argument>
+								<argument>-f</argument>
+								<argument>${basedir}/src/main/sql/01.0_Create_release_files_tables.sql</argument>
+							</arguments>
 						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<executable>psql</executable>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
