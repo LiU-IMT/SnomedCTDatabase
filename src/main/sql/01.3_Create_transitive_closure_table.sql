@@ -1,43 +1,46 @@
-ï»¿-- Declare time variables.
+-- Uppdatera "endtime date" till "endtime date NOT NULL DEFAULT 'infinity'::date" och fixa följduppdateringarna.
+
+-- Declare time variables.
 DECLARE @startTime, @endTime, @startTimeEpoch;
 
 -- Create and fill, relationships_isa, which is a modified table with only is a relationships.
 SET @startTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()); SET @startTimeEpoch = @startTime[0][1]; PRINT @startTime[0][0] + ' | Create and fill modified table with only is a relationships.';
 --
-CREATE TABLE relationships_isa (destinationid bigint NOT NULL, sourceid bigint NOT NULL, starttime date NOT NULL, endtime date, id bigint NOT NULL) WITH (OIDS=FALSE);
+
+CREATE TABLE relationships_isa (destinationid bigint NOT NULL, sourceid bigint NOT NULL, starttime date NOT NULL, endtime date NOT NULL DEFAULT 'infinity'::date, id bigint NOT NULL) WITH (OIDS=FALSE);
 --
 INSERT INTO relationships_isa (destinationid, sourceid, starttime, endtime, id) 
-SELECT destinationid, sourceid, effectivetime AS starttime, null AS endtime, id FROM relationships_rf2 WHERE typeid = 116680003 AND active = true;
+SELECT destinationid, sourceid, effectivetime AS starttime, 'infinity'::date AS endtime, id FROM relationships_rf2 WHERE typeid = 116680003 AND active = true;
 --
 UPDATE relationships_isa SET endtime = updateinfo.endtime 
 FROM 
 (
-  SELECT start_.id, start_.effectivetime AS starttime, Min(end_.effectivetime) AS endtime 
-  FROM relationships_rf2 AS start_ JOIN relationships_rf2 AS end_ ON start_.id = end_.id AND start_.effectivetime < end_.effectivetime 
-  GROUP BY start_.id, starttime 
+  SELECT start_table.id, start_table.effectivetime AS starttime, Min(end_table.effectivetime) AS endtime 
+  FROM relationships_rf2 AS start_table JOIN relationships_rf2 AS end_table ON start_table.id = end_table.id AND start_table.effectivetime < end_table.effectivetime 
+  GROUP BY start_table.id, starttime 
 ) AS updateinfo 
 WHERE relationships_isa.id = updateinfo.id AND relationships_isa.starttime = updateinfo.starttime;
 --
 ALTER TABLE relationships_isa DROP COLUMN id;
 --
-CREATE INDEX relationships_isa_destinationid ON relationships_isa USING btree (destinationid);
+CREATE INDEX index_relationships_isa_de ON relationships_isa USING btree (destinationid);
 --
 VACUUM FULL ANALYZE relationships_isa;
+
 --
 SET @endTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()) - @startTimeEpoch; PRINT @endTime[0][0] + ' | Create and fill modified table with only is a relationships. Execution time: ' + CAST (@endTime[0][1] AS STRING) + ' s'; PRINT '';
 
 -- Create and fill transitiveclosure with base data from the relationships_isa table.
 SET @startTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()); SET @startTimeEpoch = @startTime[0][1]; PRINT @startTime[0][0] + ' | Fill transitiveclosure with base data from the relationships_isa table.';
 --
-CREATE TABLE transitiveclosure (sourceid bigint NOT NULL, destinationid bigint NOT NULL, starttime date NOT NULL, endtime date, directrelation boolean NOT NULL, iteration smallint NOT NULL) WITH (OIDS=FALSE);
+CREATE TABLE transitiveclosure (sourceid bigint NOT NULL, destinationid bigint NOT NULL, starttime date NOT NULL, endtime date NOT NULL DEFAULT 'infinity'::date, directrelation boolean NOT NULL, iteration smallint NOT NULL) WITH (OIDS=FALSE);
+GRANT ALL ON TABLE transitiveclosure TO postgres;
+GRANT ALL ON TABLE transitiveclosure TO exprepgroup;
 CREATE INDEX index_transitiveclosure_sode ON transitiveclosure USING btree (sourceid, destinationid);
 CREATE INDEX index_transitiveclosure_itsode ON transitiveclosure USING btree (iteration, sourceid , destinationid);
 --
 INSERT INTO transitiveclosure (sourceid, destinationid, starttime, endtime, directrelation, iteration)
   SELECT sourceid, destinationid, starttime, endtime, true AS directrelation, 0 AS iteration FROM relationships_isa WHERE endtime IS NOT NULL;
---
-INSERT INTO transitiveclosure (sourceid, destinationid, starttime, endtime, directrelation, iteration)
-  SELECT sourceid, destinationid, starttime, '4000-01-01' AS endtime , true AS directrelation, 0 AS iteration FROM relationships_isa WHERE endtime IS NULL;
 --
 ANALYZE transitiveclosure;
 --
@@ -164,21 +167,19 @@ SET @startTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH F
 DROP INDEX index_transitiveclosure_sode;
 DROP INDEX index_transitiveclosure_itsode;
 ALTER TABLE transitiveclosure DROP COLUMN iteration;
+ALTER TABLE transitiveclosure ALTER COLUMN starttime TYPE timestamp without time zone;
+ALTER TABLE transitiveclosure ALTER COLUMN endtime TYPE timestamp without time zone;
+ALTER TABLE transitiveclosure ALTER COLUMN endtime SET DEFAULT 'infinity'::timestamp without time zone;
 --
 SET @endTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()) - @startTimeEpoch; PRINT @endTime[0][0] + ' | Update columns and index in transitiveclosure. Execution time: ' + CAST (@endTime[0][1] AS STRING) + ' s'; PRINT '';
-
--- Change endtime from 4000-01-01 to NULL in transitiveclosure.
-SET @startTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()); SET @startTimeEpoch = @startTime[0][1]; PRINT @startTime[0][0] + ' | Change endtime from 4000-01-01 to NULL';
---
-UPDATE transitiveclosure SET endtime = NULL WHERE endtime = '4000-01-01';
---
-SET @endTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()) - @startTimeEpoch; PRINT @endTime[0][0] + ' | Change endtime from 4000-01-01 to NULL completed, Execution time: ' + CAST (@endTime[0][1] AS STRING) + ' s'; PRINT '';
 
 -- Create index index in transitiveclosure.
 SET @startTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()); SET @startTimeEpoch = @startTime[0][1]; PRINT @startTime[0][0] + ' | Create index index in transitiveclosure.';
 --
 CREATE INDEX index_transitiveclosure_sode ON transitiveclosure USING btree (sourceid, destinationid);
 CREATE INDEX index_transitiveclosure_de ON transitiveclosure USING btree (destinationid);
+CREATE INDEX index_transitiveclosure_starttime ON transitiveclosure USING btree (starttime DESC NULLS LAST);
+CREATE INDEX index_transitiveclosure_endtime ON transitiveclosure USING btree (endtime DESC NULLS LAST);
 --
 SET @endTime = SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), EXTRACT(EPOCH FROM now()) - @startTimeEpoch; PRINT @endTime[0][0] + ' | Create index index in transitiveclosure. Execution time: ' + CAST (@endTime[0][1] AS STRING) + ' s'; PRINT '';
 

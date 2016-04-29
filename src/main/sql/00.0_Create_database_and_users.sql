@@ -1,15 +1,14 @@
--- Database: "termbind"
-DROP DATABASE IF EXISTS termbind2;
-CREATE DATABASE termbind2;
+DROP DATABASE IF EXISTS exprep;
+CREATE DATABASE exprep
+  WITH OWNER = postgres
+       ENCODING='UTF8'
+       CONNECTION LIMIT=-1;
 
--- Role: "termbinduser"
-CREATE ROLE termbinduser LOGIN
-  ENCRYPTED PASSWORD 'md5c6c5e55d46f1eab8d5ff30f3f502688e'
-  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
-GRANT termbindgroup TO termbinduser;
+CREATE ROLE exprepuser LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
 
--- Role: "termbindgroup"
-CREATE ROLE termbindgroup
-  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
+CREATE ROLE exprepgroup  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
 
-GRANT termbindgroup TO termbinduser;
+GRANT exprepgroup TO exprepuser;
+
+GRANT ALL ON DATABASE exprep TO postgres;
+GRANT ALL ON DATABASE exprep TO GROUP exprepgroup;
