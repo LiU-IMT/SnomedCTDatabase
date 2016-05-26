@@ -17,6 +17,36 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.mojo</groupId>
+										<artifactId>exec-maven-plugin</artifactId>
+										<versionRange>[0.0.1-SNAPSHOT,)</versionRange>
+										<goals>
+											<goal>java</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<execute />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -64,8 +94,6 @@
 						</goals>
 						<configuration>
 							<arguments>
-								<argument>-d</argument>
-								<argument>termbind2</argument>
 								<argument>-f</argument>
 								<argument>${basedir}/src/main/sql/01.0_Create_release_files_tables.sql</argument>
 							</arguments>
@@ -79,12 +107,54 @@
 						</goals>
 						<configuration>
 							<arguments>
-								<argument>-d</argument>
-								<argument>termbind2</argument>
 								<argument>-v</argument>
-								<argument>f1=E'${snomed_dir}/RF2Release/Full/Terminology/sct2_Concept_Full_INT_${snomed_date}.txt'</argument>
+								<argument>f1=E'${snomed_dir}/Full/Terminology/sct2_Concept_Full_INT_${snomed_date}.txt'</argument>
+								<argument>-v</argument>
+								<argument>f2=E'${snomed_dir}/Full/Terminology/sct2_Relationship_Full_INT_${snomed_date}.txt'</argument>
 								<argument>-f</argument>
 								<argument>${basedir}/src/main/sql/01.1_Load_release_files_tables.sql</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>create-alt-rf-tables</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<arguments>
+								
+								<argument>-f</argument>
+								<argument>${basedir}/src/main/sql/01.2_Create_alternative_release_files_tables.sql</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>create-t-c-table</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<arguments>
+								
+								<argument>-f</argument>
+								<argument>${basedir}/src/main/sql/01.3_Create_transitive_closure_table.sql</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>create-supp-tables-views</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<arguments>
+								
+								<argument>-f</argument>
+								<argument>${basedir}/src/main/sql/01.4_Create_supporting_tables_and_views.sql</argument>
 							</arguments>
 						</configuration>
 					</execution>
@@ -95,9 +165,9 @@
 						<arguments>-U</arguments>
 						<arguments>${user}</arguments>
 					</arguments>
-				<environmentVariables>
-					<PGPASSWORD>${password}</PGPASSWORD>
-				</environmentVariables>
+					<environmentVariables>
+						<PGPASSWORD>${password}</PGPASSWORD>
+					</environmentVariables>
 				</configuration>
 			</plugin>
 		</plugins>

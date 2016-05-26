@@ -5,7 +5,7 @@ Scripts for installing the SNOMED CT Expression Repository database. Run 'mvn co
 
 ### Requirements:
 1. A running PostgreSQL server.
-2. Two propoperties files:
+2. Two properties files:
 
   * pwd.properties: includes user (and password) with permission to create databases etc.
 
