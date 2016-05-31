@@ -1,4 +1,5 @@
 ﻿-- Create and fill, relationships_isa, which is a modified table with only is a relationships.
+DROP TABLE IF EXISTS relationships_isa;
 CREATE TABLE relationships_isa (destinationid bigint NOT NULL, sourceid bigint NOT NULL, starttime date NOT NULL, endtime date NOT NULL DEFAULT 'infinity'::date, id bigint NOT NULL) WITH (OIDS=FALSE);
 --
 INSERT INTO relationships_isa (destinationid, sourceid, starttime, endtime, id) 
@@ -20,6 +21,7 @@ CREATE INDEX index_relationships_isa_de ON relationships_isa USING btree (destin
 VACUUM FULL ANALYZE relationships_isa;
 
 -- Create and fill transitiveclosure with base data from the relationships_isa table.
+DROP TABLE IF EXISTS transitiveclosure;
 CREATE TABLE transitiveclosure (sourceid bigint NOT NULL, destinationid bigint NOT NULL, starttime date NOT NULL, endtime date NOT NULL DEFAULT 'infinity'::date, directrelation boolean NOT NULL, iteration smallint NOT NULL) WITH (OIDS=FALSE);
 GRANT ALL ON TABLE transitiveclosure TO postgres;
 GRANT ALL ON TABLE transitiveclosure TO exprepgroup;
